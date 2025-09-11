@@ -1,0 +1,16 @@
+[project]
+name = "text-to-speach"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "kokoro>=0.9.4",
+    "numpy>=1.25.2,<2.0.0",
+    "scipy>=1.11.0,<1.14.0",
+    "openai>=1.99.9",
+    "soundfile>=0.13.1",
+    "flask>=3.0.0",
+    "transformers>=4.30.0",
+    "torch>=2.0.0",
+]

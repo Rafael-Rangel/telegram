@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text to Speech - Kokoro</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 30px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .input-section {
+            padding: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .voice-selector {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .voice-option {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            background: #f8f9fa;
+        }
+
+        .voice-option:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .voice-option.selected {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+
+        .voice-option i {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .text-area {
+            width: 100%;
+            min-height: 300px;
+            padding: 20px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 16px;
+            line-height: 1.6;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .text-area:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .progress-section {
+            margin-top: 20px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e1e5e9;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .status {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .paragraphs-section {
+            background: #f8f9fa;
+            padding: 30px;
+            border-left: 1px solid #e1e5e9;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .paragraphs-section h3 {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 1.3rem;
+        }
+
+        .paragraph-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border-left: 4px solid #e1e5e9;
+        }
+
+        .paragraph-card.generating {
+            border-left-color: #ffc107;
+            background: #fffbf0;
+        }
+
+        .paragraph-card.completed {
+            border-left-color: #28a745;
+            background: #f8fff9;
+        }
+
+        .paragraph-card.error {
+            border-left-color: #dc3545;
+            background: #fff5f5;
+        }
+
+        .paragraph-card.playing {
+            border-left-color: #667eea;
+            background: #f0f4ff;
+            transform: scale(1.02);
+        }
+
+        .paragraph-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .paragraph-number {
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .paragraph-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .status-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .status-icon.waiting {
+            background: #e1e5e9;
+            color: #666;
+        }
+
+        .status-icon.generating {
+            background: #ffc107;
+            color: white;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-icon.completed {
+            background: #28a745;
+            color: white;
+        }
+
+        .status-icon.error {
+            background: #dc3545;
+            color: white;
+        }
+
+        .status-icon.playing {
+            background: #667eea;
+            color: white;
+            animation: pulse 1s infinite;
+        }
+
+        .paragraph-text {
+            font-size: 14px;
+            line-height: 1.5;
+            color: #555;
+            margin-bottom: 15px;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        .paragraph-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+        }
+
+        .global-controls {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: 2px solid #e1e5e9;
+        }
+
+        .global-controls h4 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.1rem;
+        }
+
+                 .global-buttons {
+             display: flex;
+             gap: 10px;
+             flex-wrap: wrap;
+         }
+
+         .btn-medium {
+             padding: 8px 16px;
+             font-size: 14px;
+             border-radius: 8px;
+         }
+
+         .speed-controls {
+             margin-bottom: 20px;
+             padding: 15px;
+             background: #f8f9fa;
+             border-radius: 8px;
+             border: 1px solid #e1e5e9;
+         }
+
+         .speed-controls label {
+             display: block;
+             margin-bottom: 10px;
+             font-weight: 600;
+             color: #555;
+         }
+
+         .speed-slider-container {
+             display: flex;
+             align-items: center;
+             gap: 15px;
+             margin-bottom: 10px;
+         }
+
+         .speed-slider {
+             flex: 1;
+             height: 6px;
+             border-radius: 3px;
+             background: #e1e5e9;
+             outline: none;
+             -webkit-appearance: none;
+         }
+
+         .speed-slider::-webkit-slider-thumb {
+             -webkit-appearance: none;
+             appearance: none;
+             width: 18px;
+             height: 18px;
+             border-radius: 50%;
+             background: #667eea;
+             cursor: pointer;
+             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+         }
+
+         .speed-slider::-moz-range-thumb {
+             width: 18px;
+             height: 18px;
+             border-radius: 50%;
+             background: #667eea;
+             cursor: pointer;
+             border: none;
+             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+         }
+
+         #speed-value {
+             font-weight: bold;
+             color: #667eea;
+             min-width: 40px;
+             text-align: center;
+         }
+
+         .speed-presets {
+             display: flex;
+             gap: 8px;
+             flex-wrap: wrap;
+         }
+
+         .speed-preset {
+             padding: 4px 8px;
+             font-size: 12px;
+             background: #e1e5e9;
+             color: #666;
+             border: 1px solid #d1d5d9;
+         }
+
+         .speed-preset:hover {
+             background: #d1d5d9;
+         }
+
+         .speed-preset.active {
+             background: #667eea;
+             color: white;
+             border-color: #667eea;
+         }
+
+        .paragraph-card {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .paragraph-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .paragraph-card.playing {
+            border-left-color: #667eea;
+            background: #f0f4ff;
+            transform: scale(1.02);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .paragraph-card.paused {
+            border-left-color: #ffc107;
+            background: #fffbf0;
+        }
+
+        .duration {
+            font-size: 12px;
+            color: #666;
+            margin-left: auto;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .audio-player {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 4px;
+            animation: highlight 2s ease-in-out;
+        }
+
+        @keyframes highlight {
+            0% { background: #fff3cd; }
+            50% { background: #ffeaa7; }
+            100% { background: #fff3cd; }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .paragraphs-section {
+                border-left: none;
+                border-top: 1px solid #e1e5e9;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-microphone"></i> Text to Speech</h1>
+            <p>Converta texto em áudio com geração em blocos e visualização em tempo real</p>
+        </div>
+
+        <div class="main-content">
+            <div class="input-section">
+                <div class="form-group">
+                    <label>Selecione a voz:</label>
+                    <div class="voice-selector">
+                        <div class="voice-option" data-voice="pf_dora">
+                            <i class="fas fa-female"></i>
+                            <div>Dora</div>
+                            <small>Feminina</small>
+                        </div>
+                        <div class="voice-option selected" data-voice="pm_alex">
+                            <i class="fas fa-male"></i>
+                            <div>Alex</div>
+                            <small>Masculina</small>
+                        </div>
+                        <div class="voice-option" data-voice="pm_santa">
+                            <i class="fas fa-user"></i>
+                            <div>Santa</div>
+                            <small>Masculina</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="text-input">Digite o texto para converter:</label>
+                    <textarea id="text-input" class="text-area" placeholder="Digite aqui o texto que você deseja converter em áudio. Você pode usar parágrafos separados por linhas em branco para melhor organização.
+
+Por exemplo:
+
+Este é o primeiro parágrafo que será convertido em áudio.
+
+Este é o segundo parágrafo que será processado separadamente.
+
+E assim por diante..."></textarea>
+                </div>
+
+                <div class="controls">
+                    <button id="generate-btn" class="btn btn-primary">
+                        <i class="fas fa-play"></i>
+                        Gerar Áudio
+                    </button>
+                    <button id="cancel-btn" class="btn btn-danger" style="display: none;">
+                        <i class="fas fa-stop"></i>
+                        Cancelar
+                    </button>
+                    <button id="cleanup-btn" class="btn btn-secondary">
+                        <i class="fas fa-trash"></i>
+                        Limpar
+                    </button>
+                </div>
+
+                <div class="progress-section" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <div class="status" id="status-text">Pronto para gerar áudio</div>
+                </div>
+            </div>
+
+            <div class="paragraphs-section">
+                <h3><i class="fas fa-list"></i> Parágrafos</h3>
+                
+                                 <div class="global-controls" style="display: none;" id="global-controls">
+                     <h4><i class="fas fa-headphones"></i> Controles de Reprodução</h4>
+                     
+                     <div class="speed-controls">
+                         <label for="speed-slider">Velocidade:</label>
+                         <div class="speed-slider-container">
+                             <input type="range" id="speed-slider" min="0.5" max="2" step="0.1" value="1" class="speed-slider">
+                             <span id="speed-value">1x</span>
+                         </div>
+                         <div class="speed-presets">
+                             <button class="btn btn-small speed-preset" data-speed="0.5">0.5x</button>
+                             <button class="btn btn-small speed-preset" data-speed="0.75">0.75x</button>
+                             <button class="btn btn-small speed-preset active" data-speed="1">1x</button>
+                             <button class="btn btn-small speed-preset" data-speed="1.25">1.25x</button>
+                             <button class="btn btn-small speed-preset" data-speed="1.5">1.5x</button>
+                             <button class="btn btn-small speed-preset" data-speed="2">2x</button>
+                         </div>
+                     </div>
+                     
+                     <div class="global-buttons">
+                         <button class="btn btn-primary btn-medium" id="play-all-btn">
+                             <i class="fas fa-play"></i> Reproduzir Tudo
+                         </button>
+                         <button class="btn btn-secondary btn-medium" id="pause-btn" style="display: none;">
+                             <i class="fas fa-pause"></i> Pausar
+                         </button>
+                         <button class="btn btn-secondary btn-medium" id="resume-btn" style="display: none;">
+                             <i class="fas fa-play"></i> Continuar
+                         </button>
+                         <button class="btn btn-secondary btn-medium" id="prev-btn">
+                             <i class="fas fa-chevron-up"></i> Anterior
+                         </button>
+                         <button class="btn btn-secondary btn-medium" id="next-btn">
+                             <i class="fas fa-chevron-down"></i> Próximo
+                         </button>
+                         <button class="btn btn-secondary btn-medium" id="restart-btn">
+                             <i class="fas fa-redo"></i> Do Início
+                         </button>
+                     </div>
+                 </div>
+                
+                <div id="paragraphs-container">
+                    <div style="text-align: center; color: #666; padding: 40px;">
+                        <i class="fas fa-file-text" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.3;"></i>
+                        <p>Os parágrafos aparecerão aqui quando você gerar o áudio</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedVoice = 'pm_alex';
+        let isGenerating = false;
+        let statusInterval = null;
+        let currentPlayingAudio = null;
+        let currentPlayingIndex = -1;
+        let isSequentialPlaying = false;
+        let isPaused = false;
+        let audioQueue = [];
+        let playbackSpeed = 1.0;
+
+        // Seleção de voz
+        document.querySelectorAll('.voice-option').forEach(option => {
+            option.addEventListener('click', () => {
+                document.querySelectorAll('.voice-option').forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+                selectedVoice = option.dataset.voice;
+            });
+        });
+
+        // Gerar áudio
+        document.getElementById('generate-btn').addEventListener('click', async () => {
+            const text = document.getElementById('text-input').value.trim();
+            if (!text) {
+                alert('Por favor, digite algum texto!');
+                return;
+            }
+
+            isGenerating = true;
+            updateUI();
+
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        voice: selectedVoice
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    startStatusPolling();
+                    createParagraphCards(data.paragraphs);
+                } else {
+                    alert('Erro: ' + data.error);
+                    isGenerating = false;
+                    updateUI();
+                }
+            } catch (error) {
+                alert('Erro ao gerar áudio: ' + error.message);
+                isGenerating = false;
+                updateUI();
+            }
+        });
+
+        // Cancelar geração
+        document.getElementById('cancel-btn').addEventListener('click', async () => {
+            try {
+                await fetch('/cancel', { method: 'POST' });
+                isGenerating = false;
+                updateUI();
+                stopStatusPolling();
+            } catch (error) {
+                console.error('Erro ao cancelar:', error);
+            }
+        });
+
+        // Limpar arquivos
+        document.getElementById('cleanup-btn').addEventListener('click', async () => {
+            try {
+                await fetch('/cleanup', { method: 'POST' });
+                document.getElementById('paragraphs-container').innerHTML = `
+                    <div style="text-align: center; color: #666; padding: 40px;">
+                        <i class="fas fa-file-text" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.3;"></i>
+                        <p>Os parágrafos aparecerão aqui quando você gerar o áudio</p>
+                    </div>
+                `;
+                document.getElementById('global-controls').style.display = 'none';
+                resetPlaybackState();
+            } catch (error) {
+                console.error('Erro ao limpar:', error);
+            }
+        });
+
+        // Controles globais de reprodução
+        document.getElementById('play-all-btn').addEventListener('click', () => {
+            playAllSequentially();
+        });
+
+        document.getElementById('pause-btn').addEventListener('click', () => {
+            pausePlayback();
+        });
+
+        document.getElementById('resume-btn').addEventListener('click', () => {
+            resumePlayback();
+        });
+
+        document.getElementById('prev-btn').addEventListener('click', () => {
+            playPrevious();
+        });
+
+        document.getElementById('next-btn').addEventListener('click', () => {
+            playNext();
+        });
+
+        document.getElementById('restart-btn').addEventListener('click', () => {
+            restartPlayback();
+        });
+
+        // Controles de velocidade
+        document.getElementById('speed-slider').addEventListener('input', (e) => {
+            const speed = parseFloat(e.target.value);
+            setPlaybackSpeed(speed);
+        });
+
+        document.querySelectorAll('.speed-preset').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const speed = parseFloat(btn.dataset.speed);
+                setPlaybackSpeed(speed);
+                
+                // Atualizar slider
+                document.getElementById('speed-slider').value = speed;
+                
+                // Atualizar presets ativos
+                document.querySelectorAll('.speed-preset').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+
+        function updateUI() {
+            const generateBtn = document.getElementById('generate-btn');
+            const cancelBtn = document.getElementById('cancel-btn');
+            const progressSection = document.querySelector('.progress-section');
+
+            if (isGenerating) {
+                generateBtn.style.display = 'none';
+                cancelBtn.style.display = 'flex';
+                progressSection.style.display = 'block';
+            } else {
+                generateBtn.style.display = 'flex';
+                cancelBtn.style.display = 'none';
+                progressSection.style.display = 'none';
+            }
+        }
+
+        function startStatusPolling() {
+            statusInterval = setInterval(async () => {
+                try {
+                    const response = await fetch('/status');
+                    const data = await response.json();
+                    
+                    updateProgress(data);
+                    updateParagraphCards(data);
+                    
+                    if (!data.is_generating && isGenerating) {
+                        isGenerating = false;
+                        updateUI();
+                        stopStatusPolling();
+                    }
+                } catch (error) {
+                    console.error('Erro ao verificar status:', error);
+                }
+            }, 1000);
+        }
+
+        function stopStatusPolling() {
+            if (statusInterval) {
+                clearInterval(statusInterval);
+                statusInterval = null;
+            }
+        }
+
+        function updateProgress(data) {
+            const progressFill = document.getElementById('progress-fill');
+            const statusText = document.getElementById('status-text');
+            
+            if (data.total_paragraphs > 0) {
+                const progress = (data.completed / data.total_paragraphs) * 100;
+                progressFill.style.width = progress + '%';
+                statusText.textContent = `Gerando... ${data.completed}/${data.total_paragraphs} parágrafos completos`;
+            }
+        }
+
+        function createParagraphCards(paragraphs) {
+            const container = document.getElementById('paragraphs-container');
+            container.innerHTML = '';
+            
+            paragraphs.forEach((paragraph, index) => {
+                const card = createParagraphCard(paragraph, index);
+                container.appendChild(card);
+            });
+            
+            // Mostrar controles globais quando há parágrafos
+            document.getElementById('global-controls').style.display = 'block';
+        }
+
+        function createParagraphCard(text, index) {
+            const card = document.createElement('div');
+            card.className = 'paragraph-card';
+            card.dataset.index = index;
+            
+            card.innerHTML = `
+                <div class="paragraph-header">
+                    <div class="paragraph-number">${index + 1}</div>
+                    <div class="paragraph-status">
+                        <div class="status-icon waiting">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <span>Aguardando...</span>
+                    </div>
+                </div>
+                <div class="paragraph-text">${text}</div>
+                <div class="paragraph-controls">
+                    <button class="btn btn-primary btn-small play-btn" style="display: none;">
+                        <i class="fas fa-play"></i> Reproduzir
+                    </button>
+                    <button class="btn btn-secondary btn-small download-btn" style="display: none;">
+                        <i class="fas fa-download"></i> Baixar
+                    </button>
+                </div>
+            `;
+            
+            // Adicionar evento de clique no card
+            card.addEventListener('click', (e) => {
+                // Não executar se clicou em um botão
+                if (e.target.closest('.btn')) return;
+                
+                const playBtn = card.querySelector('.play-btn');
+                if (playBtn.style.display !== 'none') {
+                    playBtn.click();
+                }
+            });
+            
+            return card;
+        }
+
+        function updateParagraphCards(data) {
+            data.audio_files.forEach(audioFile => {
+                const card = document.querySelector(`[data-index="${audioFile.paragraph_index}"]`);
+                if (card) {
+                    updateCardStatus(card, audioFile);
+                }
+            });
+            
+            // Atualizar controles globais quando novos áudios ficam disponíveis
+            updateGlobalControls();
+        }
+
+        function updateCardStatus(card, audioFile) {
+            const statusIcon = card.querySelector('.status-icon');
+            const statusText = card.querySelector('.paragraph-status span');
+            const playBtn = card.querySelector('.play-btn');
+            const downloadBtn = card.querySelector('.download-btn');
+            
+            // Remove todas as classes de status
+            card.className = 'paragraph-card';
+            statusIcon.className = 'status-icon';
+            
+            if (audioFile.status === 'completed') {
+                card.classList.add('completed');
+                statusIcon.classList.add('completed');
+                statusIcon.innerHTML = '<i class="fas fa-check"></i>';
+                statusText.textContent = 'Concluído';
+                
+                playBtn.style.display = 'inline-flex';
+                downloadBtn.style.display = 'inline-flex';
+                
+                // Adicionar duração
+                const duration = Math.round(audioFile.duration);
+                if (!card.querySelector('.duration')) {
+                    const durationEl = document.createElement('div');
+                    durationEl.className = 'duration';
+                    durationEl.textContent = `${duration}s`;
+                    card.querySelector('.paragraph-header').appendChild(durationEl);
+                }
+                
+                // Armazenar nome do arquivo no botão para uso posterior
+                playBtn.setAttribute('data-audio-file', audioFile.audio_file);
+                
+                // Event listeners para os botões
+                playBtn.onclick = () => playAudio(audioFile.audio_file, card);
+                downloadBtn.onclick = () => downloadAudio(audioFile.audio_file);
+                
+            } else if (audioFile.status === 'error') {
+                card.classList.add('error');
+                statusIcon.classList.add('error');
+                statusIcon.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+                statusText.textContent = 'Erro';
+                
+            } else {
+                card.classList.add('generating');
+                statusIcon.classList.add('generating');
+                statusIcon.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                statusText.textContent = 'Gerando...';
+            }
+        }
+
+        function playAudio(audioFile, card) {
+            const cardIndex = parseInt(card.dataset.index);
+            
+            console.log(`Reproduzindo áudio do card ${cardIndex}: ${audioFile}`);
+            
+            // Parar áudio atual se estiver tocando
+            if (currentPlayingAudio) {
+                currentPlayingAudio.pause();
+                currentPlayingAudio = null;
+                document.querySelectorAll('.paragraph-card').forEach(c => {
+                    c.classList.remove('playing', 'paused');
+                });
+            }
+            
+            const audio = new Audio(`/audio/${audioFile}`);
+            currentPlayingAudio = audio;
+            currentPlayingIndex = cardIndex;
+            
+            console.log(`Índice atual definido para: ${currentPlayingIndex}`);
+            
+            // SEMPRE ativar reprodução sequencial quando clicar em um card
+            isSequentialPlaying = true;
+            isPaused = false;
+            
+            // Aplicar velocidade atual
+            audio.playbackRate = playbackSpeed;
+            
+            card.classList.add('playing');
+            updateGlobalControls();
+            
+            audio.addEventListener('ended', () => {
+                card.classList.remove('playing', 'paused');
+                currentPlayingAudio = null;
+                // NÃO resetar o currentPlayingIndex aqui - manter para navegação correta
+                updateGlobalControls();
+                
+                // SEMPRE tocar o próximo se não estiver pausado
+                if (isSequentialPlaying && !isPaused) {
+                    playNext();
+                }
+            });
+            
+            audio.addEventListener('error', () => {
+                alert('Erro ao reproduzir áudio');
+                card.classList.remove('playing', 'paused');
+                currentPlayingAudio = null;
+                currentPlayingIndex = -1;
+                updateGlobalControls();
+            });
+            
+            audio.play();
+        }
+
+        function downloadAudio(audioFile) {
+            const link = document.createElement('a');
+            link.href = `/audio/${audioFile}`;
+            link.download = audioFile;
+            link.click();
+        }
+
+        // Funções de controle de reprodução
+        function playAllSequentially() {
+            // Parar áudio atual se estiver tocando
+            if (currentPlayingAudio) {
+                currentPlayingAudio.pause();
+                currentPlayingAudio = null;
+                document.querySelectorAll('.paragraph-card').forEach(c => {
+                    c.classList.remove('playing', 'paused');
+                });
+            }
+            
+            isSequentialPlaying = true;
+            isPaused = false;
+            currentPlayingIndex = -1; // Começar do primeiro
+            console.log('Iniciando reprodução sequencial de todos os parágrafos');
+            playNext();
+        }
+
+        function pausePlayback() {
+            if (currentPlayingAudio) {
+                currentPlayingAudio.pause();
+                isPaused = true;
+                const currentCard = document.querySelector(`[data-index="${currentPlayingIndex}"]`);
+                if (currentCard) {
+                    currentCard.classList.remove('playing');
+                    currentCard.classList.add('paused');
+                }
+                updateGlobalControls();
+            }
+        }
+
+        function resumePlayback() {
+            if (currentPlayingAudio && isPaused) {
+                currentPlayingAudio.play();
+                isPaused = false;
+                const currentCard = document.querySelector(`[data-index="${currentPlayingIndex}"]`);
+                if (currentCard) {
+                    currentCard.classList.remove('paused');
+                    currentCard.classList.add('playing');
+                }
+                updateGlobalControls();
+            }
+        }
+
+        function setPlaybackSpeed(speed) {
+            playbackSpeed = speed;
+            
+            // Atualizar display
+            document.getElementById('speed-value').textContent = speed + 'x';
+            
+            // Aplicar velocidade ao áudio atual se estiver tocando
+            if (currentPlayingAudio) {
+                currentPlayingAudio.playbackRate = speed;
+            }
+            
+            // Atualizar presets ativos
+            document.querySelectorAll('.speed-preset').forEach(btn => {
+                btn.classList.remove('active');
+                if (parseFloat(btn.dataset.speed) === speed) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        function playPrevious() {
+            const cards = document.querySelectorAll('.paragraph-card');
+            
+            if (cards.length === 0) return;
+            
+            let targetIndex = currentPlayingIndex - 1;
+            
+            // Se está no primeiro, ir para o último
+            if (targetIndex < 0) {
+                targetIndex = cards.length - 1;
+            }
+            
+            const targetCard = cards[targetIndex];
+            const playBtn = targetCard.querySelector('.play-btn');
+            
+            // Verificar se o card tem áudio disponível
+            if (playBtn && playBtn.style.display !== 'none') {
+                // Simular clique no botão de reproduzir
+                const audioFile = playBtn.getAttribute('data-audio-file');
+                if (audioFile) {
+                    playAudio(audioFile, targetCard);
+                } else {
+                    playBtn.click();
+                }
+            } else {
+                // Se o card anterior não tem áudio, pular para o anterior disponível
+                let prevAvailableIndex = targetIndex;
+                let attempts = 0;
+                
+                while (attempts < cards.length) {
+                    const prevCard = cards[prevAvailableIndex];
+                    const prevPlayBtn = prevCard.querySelector('.play-btn');
+                    
+                    if (prevPlayBtn && prevPlayBtn.style.display !== 'none') {
+                        const audioFile = prevPlayBtn.getAttribute('data-audio-file');
+                        if (audioFile) {
+                            playAudio(audioFile, prevCard);
+                        } else {
+                            prevPlayBtn.click();
+                        }
+                        return;
+                    }
+                    
+                    prevAvailableIndex = prevAvailableIndex - 1;
+                    if (prevAvailableIndex < 0) {
+                        prevAvailableIndex = cards.length - 1;
+                    }
+                    attempts++;
+                }
+            }
+        }
+
+        function playNext() {
+            const cards = document.querySelectorAll('.paragraph-card');
+            
+            if (cards.length === 0) return;
+            
+            // Se currentPlayingIndex é -1 (início), começar do primeiro
+            let targetIndex = currentPlayingIndex === -1 ? 0 : currentPlayingIndex + 1;
+            
+            // Se chegou ao fim, voltar para o primeiro
+            if (targetIndex >= cards.length) {
+                targetIndex = 0;
+            }
+            
+            console.log(`Navegando para o próximo: índice ${targetIndex} de ${cards.length - 1}`);
+            
+            const targetCard = cards[targetIndex];
+            const playBtn = targetCard.querySelector('.play-btn');
+            
+            // Verificar se o card tem áudio disponível
+            if (playBtn && playBtn.style.display !== 'none') {
+                // Simular clique no botão de reproduzir
+                const audioFile = playBtn.getAttribute('data-audio-file');
+                if (audioFile) {
+                    playAudio(audioFile, targetCard);
+                } else {
+                    playBtn.click();
+                }
+            } else {
+                // Se o próximo card não tem áudio, pular para o próximo disponível
+                let nextAvailableIndex = targetIndex;
+                let attempts = 0;
+                
+                while (attempts < cards.length) {
+                    const nextCard = cards[nextAvailableIndex];
+                    const nextPlayBtn = nextCard.querySelector('.play-btn');
+                    
+                    if (nextPlayBtn && nextPlayBtn.style.display !== 'none') {
+                        console.log(`Encontrado card com áudio no índice: ${nextAvailableIndex}`);
+                        const audioFile = nextPlayBtn.getAttribute('data-audio-file');
+                        if (audioFile) {
+                            playAudio(audioFile, nextCard);
+                        } else {
+                            nextPlayBtn.click();
+                        }
+                        return;
+                    }
+                    
+                    nextAvailableIndex = (nextAvailableIndex + 1) % cards.length;
+                    attempts++;
+                }
+                
+                // Se nenhum card tem áudio disponível, parar reprodução
+                console.log('Nenhum card com áudio disponível, parando reprodução');
+                isSequentialPlaying = false;
+                currentPlayingIndex = -1;
+                updateGlobalControls();
+            }
+        }
+
+        function restartPlayback() {
+            const cards = document.querySelectorAll('.paragraph-card');
+            
+            if (cards.length === 0) return;
+            
+            // Parar áudio atual
+            if (currentPlayingAudio) {
+                currentPlayingAudio.pause();
+                currentPlayingAudio = null;
+            }
+            
+            // Remover classes de reprodução
+            document.querySelectorAll('.paragraph-card').forEach(c => {
+                c.classList.remove('playing', 'paused');
+            });
+            
+            // Ativar reprodução sequencial
+            isSequentialPlaying = true;
+            isPaused = false;
+            
+            // Encontrar o primeiro card com áudio disponível
+            for (let i = 0; i < cards.length; i++) {
+                const card = cards[i];
+                const playBtn = card.querySelector('.play-btn');
+                
+                if (playBtn && playBtn.style.display !== 'none') {
+                    // Simular clique no botão de reproduzir
+                    const audioFile = playBtn.getAttribute('data-audio-file');
+                    if (audioFile) {
+                        playAudio(audioFile, card);
+                    } else {
+                        playBtn.click();
+                    }
+                    return;
+                }
+            }
+        }
+
+        function updateGlobalControls() {
+            const playAllBtn = document.getElementById('play-all-btn');
+            const pauseBtn = document.getElementById('pause-btn');
+            const resumeBtn = document.getElementById('resume-btn');
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const restartBtn = document.getElementById('restart-btn');
+            
+            const cards = document.querySelectorAll('.paragraph-card');
+            const completedCards = Array.from(cards).filter(card => 
+                card.querySelector('.play-btn').style.display !== 'none'
+            );
+            
+            const hasCompletedCards = completedCards.length > 0;
+            const isPlaying = currentPlayingAudio && !isPaused;
+            const isPausedState = currentPlayingAudio && isPaused;
+            
+            // Habilitar/desabilitar botões
+            playAllBtn.disabled = !hasCompletedCards;
+            pauseBtn.style.display = isPlaying ? 'inline-flex' : 'none';
+            resumeBtn.style.display = isPausedState ? 'inline-flex' : 'none';
+            prevBtn.disabled = !hasCompletedCards;
+            nextBtn.disabled = !hasCompletedCards;
+            restartBtn.disabled = !hasCompletedCards;
+        }
+
+        function resetPlaybackState() {
+            currentPlayingAudio = null;
+            currentPlayingIndex = -1;
+            isSequentialPlaying = false;
+            isPaused = false;
+            updateGlobalControls();
+        }
+
+        // Destacar texto sendo falado
+        function highlightText(card) {
+            const textElement = card.querySelector('.paragraph-text');
+            textElement.classList.add('highlight');
+            setTimeout(() => {
+                textElement.classList.remove('highlight');
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
