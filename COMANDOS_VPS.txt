@@ -1,0 +1,105 @@
+# ============================================
+# COMANDOS PARA INSTALAR NA SUA VPS
+# Execute na ordem mostrada
+# ============================================
+
+# 1. CRIAR PASTA E COPIAR ARQUIVOS
+cd ~
+mkdir -p telegram-downloader
+cd telegram-downloader
+
+# (Aqui você transfere os arquivos: api.py, telegram_client.py, config.py, requirements.txt, Dockerfile.telegram)
+# Use SCP, SFTP, WinSCP ou copie o conteúdo manualmente
+
+# 2. EDITAR docker-compose.yml (que está na raiz ~)
+cd ~
+nano docker-compose.yml
+
+# Adicione ANTES da seção "volumes:":
+# (copie o conteúdo abaixo)
+
+  telegram-video-downloader:
+    build:
+      context: ./telegram-downloader
+      dockerfile: Dockerfile.telegram
+    container_name: telegram-video-downloader
+    restart: always
+    ports:
+      - "127.0.0.1:8001:8000"
+    environment:
+      - TELEGRAM_API_ID=29090427
+      - TELEGRAM_API_HASH=88bf96af8dc0652c6f5026417b7d8f25
+      - TELEGRAM_SESSION_NAME=telegram_session
+    volumes:
+      - /tmp/telegram-videos:/tmp/telegram-videos
+      - telegram-session:/app/.telegram_session
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.telegram-downloader.rule=Host(`telegram-videos.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.telegram-downloader.tls=true"
+      - "traefik.http.routers.telegram-downloader.entrypoints=web,websecure"
+      - "traefik.http.routers.telegram-downloader.tls.certresolver=mytlschallenge"
+      - "traefik.http.services.telegram-downloader.loadbalancer.server.port=8000"
+
+# E na seção "volumes:", adicione:
+  telegram-session:
+
+# 3. BUILD E INICIAR
+docker-compose build telegram-video-downloader
+docker-compose up -d telegram-video-downloader
+
+# 4. VERIFICAR SE ESTÁ RODANDO
+docker ps | grep telegram
+
+# 5. AUTENTICAR NO TELEGRAM (PRIMEIRA VEZ - IMPORTANTE!)
+docker exec -it telegram-video-downloader python3 -c "
+import asyncio
+from telethon import TelegramClient
+import os
+async def auth():
+    client = TelegramClient('telegram_session', 29090427, '88bf96af8dc0652c6f5026417b7d8f25')
+    await client.start()
+    print('✅ Autenticado!')
+    await client.disconnect()
+asyncio.run(auth())
+"
+
+# Você será pedido para:
+# - Número de telefone (ex: +5521991305454)
+# - Código do Telegram
+# - Senha 2FA (se tiver)
+
+# 6. TESTAR A API
+curl http://localhost:8001/health
+curl http://localhost:8001/list-groups
+
+# 7. USAR NO N8N
+# No n8n, use HTTP Request:
+# URL: http://telegram-video-downloader:8000/download-videos
+# Method: POST
+# Body (JSON):
+# {
+#   "grupo_id": "-1002007723449",
+#   "limite": 3,
+#   "transcrever": true
+# }
+
+# 8. VER VÍDEOS BAIXADOS
+ls -lh /tmp/telegram-videos/
+
+# ============================================
+# COMANDOS ÚTEIS
+# ============================================
+
+# Ver logs
+docker logs telegram-video-downloader
+
+# Reiniciar
+docker-compose restart telegram-video-downloader
+
+# Parar
+docker-compose stop telegram-video-downloader
+
+# Limpar vídeos
+rm -rf /tmp/telegram-videos/*
+

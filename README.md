@@ -1,85 +1,137 @@
-# Text to Speech com Kokoro
+# 📥 Telegram Video Downloader API
 
-Um aplicativo web moderno de conversão de texto para áudio usando a biblioteca Kokoro com geração em blocos e visualização em tempo real.
+API para baixar vídeos do Telegram automaticamente, transcrever com Whisper e integrar com n8n.
 
-## ✨ Funcionalidades
+## 🚀 Funcionalidades
 
-- 🌐 **Interface Web Moderna** - Design responsivo e intuitivo
-- 📝 **Geração em Blocos** - Divide o texto em parágrafos e gera áudio para cada um
-- 🎵 **Visualização em Tempo Real** - Cards mostram o progresso de cada parágrafo
-- 🎤 **Múltiplas Vozes** - pf_dora, pm_alex, pm_santa
-- ▶️ **Reprodução Individual** - Ouça cada parágrafo separadamente
-- 🔄 **Reprodução Sequencial** - Reproduz automaticamente o próximo parágrafo
-- ⏯️ **Controles de Navegação** - Anterior, próximo, pausar, continuar, reiniciar
-- 🎚️ **Controle de Velocidade** - Ajuste a velocidade de 0.5x a 2x
-- 📊 **Barra de Progresso** - Acompanhe a geração em tempo real
-- 💾 **Download Individual** - Baixe cada áudio separadamente
-- 🎨 **Interface Responsiva** - Funciona em desktop e mobile
+- ✅ Download automático de vídeos de grupos do Telegram
+- ✅ Transcrição automática usando Whisper (OpenAI) - **100% GRATUITO**
+- ✅ API HTTP para integração com n8n
+- ✅ Controle de duplicatas (não baixa vídeos repetidos)
+- ✅ Limite configurável de vídeos por requisição (padrão: 3)
+- ✅ Organização automática por grupo e data
+- ✅ Retorna: vídeo, transcrição, ID, data, tamanho
 
-## 🚀 Como usar
+## 📋 Requisitos
 
-### 1. Instalar dependências
+- Docker e Docker Compose
+- Python 3.11+ (para desenvolvimento local)
+- FFmpeg (incluído no Dockerfile)
+- Conta no Telegram com API_ID e API_HASH
+
+## 🔧 Instalação
+
+### Para VPS com Docker
+
+Veja o guia completo em: [GUIA_INSTALACAO_VPS.md](GUIA_INSTALACAO_VPS.md)
+
+**Resumo rápido:**
+1. Clone este repositório na sua VPS
+2. Adicione o serviço ao seu `docker-compose.yml`
+3. Execute `docker-compose build && docker-compose up -d`
+4. Autentique no Telegram (primeira vez)
+
+### Para desenvolvimento local
+
 ```bash
-uv sync
+# Instalar dependências
+pip install -r requirements.txt
+
+# Executar API
+uvicorn api:app --host 0.0.0.0 --port 8000
+
+# Ou executar script local
+python telegram_client.py
 ```
 
-### 2. Executar a aplicação web
-```bash
-python app_web.py
+## 📡 API Endpoints
+
+### GET /health
+Verifica status da API
+
+### POST /download-videos
+Baixa vídeos de um grupo
+
+**Parâmetros:**
+- `grupo_id` (string): ID do grupo Telegram
+- `limite` (int, opcional): Máximo de vídeos (padrão: 3)
+- `transcrever` (bool, opcional): Transcrever vídeos (padrão: true)
+
+**Exemplo:**
+```json
+{
+  "grupo_id": "-1002007723449",
+  "limite": 3,
+  "transcrever": true
+}
 ```
 
-### 3. Acessar no navegador
-Abra: http://localhost:5000
+### GET /list-groups
+Lista todos os grupos do Telegram
 
-### 4. Usar o aplicativo
-1. Digite o texto (use parágrafos separados por linhas em branco)
-2. Selecione a voz desejada
-3. Clique em "Gerar Áudio"
-4. Acompanhe o progresso nos cards da lateral
-5. Use os controles de reprodução:
-   - **Reproduzir Tudo**: Toca todos os parágrafos sequencialmente
-   - **Navegação**: Anterior, próximo, pausar, continuar
-   - **Velocidade**: Ajuste de 0.5x a 2x com slider e presets
-   - **Cards clicáveis**: Clique em qualquer card para reproduzir
+## 🔗 Integração com n8n
 
-## 📁 Arquivos do projeto
+Use o nó **HTTP Request**:
 
-- `app_web.py` - Aplicação web Flask principal
-- `templates/index.html` - Interface web moderna
-- `app_gui.py` - Interface gráfica desktop (versão anterior)
-- `app.py` - Script simples (versão anterior)
-- `pyproject.toml` - Configurações e dependências
+```
+URL: http://telegram-video-downloader:8000/download-videos
+Method: POST
+Body: JSON
+{
+  "grupo_id": "-1002007723449",
+  "limite": 3,
+  "transcrever": true
+}
+```
 
-## 🎤 Vozes disponíveis
+## 📁 Estrutura de Arquivos
 
-- **pf_dora** - Dora (Feminina)
-- **pm_alex** - Alex (Masculina)  
-- **pm_santa** - Santa (Masculina)
+```
+.
+├── api.py                    # API FastAPI principal
+├── telegram_client.py        # Funções do cliente Telegram
+├── config.py                 # Configurações
+├── requirements.txt          # Dependências Python
+├── Dockerfile.telegram       # Dockerfile para container
+├── docker-compose.addition.yml  # Serviço para adicionar ao compose
+├── GUIA_INSTALACAO_VPS.md    # Guia completo de instalação
+├── README_API.md             # Documentação da API
+└── README.md                 # Este arquivo
+```
 
-## 💻 Requisitos
+## 🎤 Transcrição com Whisper
 
-- Python 3.12+
-- Bibliotecas: kokoro, numpy, soundfile, flask
+- **100% Gratuito**: Whisper roda localmente, sem custos
+- **Offline**: Não envia dados para servidores
+- **Suporta Português**: Configurado para PT-BR
+- **Modelo**: "base" (equilíbrio entre velocidade e qualidade)
 
-## 📖 Exemplo de uso
+## ⚙️ Configuração
 
-1. Abra http://localhost:5000
-2. Digite um texto com parágrafos:
-   ```
-   Este é o primeiro parágrafo.
-   
-   Este é o segundo parágrafo.
-   
-   E assim por diante...
-   ```
-3. Selecione a voz "Alex"
-4. Clique em "Gerar Áudio"
-5. Acompanhe o progresso nos cards
-6. Reproduza cada parágrafo quando estiver pronto
+Crie um arquivo `.env` (ou use variáveis de ambiente):
 
-## 🔧 Solução de problemas
+```bash
+TELEGRAM_API_ID=seu_api_id
+TELEGRAM_API_HASH=seu_api_hash
+TELEGRAM_SESSION_NAME=telegram_session
+```
 
-- **Erro de inicialização**: Aguarde alguns segundos para o pipeline carregar
-- **Áudio não gera**: Verifique se o texto não está vazio
-- **Cards não aparecem**: Verifique se o texto tem parágrafos separados
-- **Erro de conexão**: Verifique se a porta 5000 está livre
+**Como obter API_ID e API_HASH:**
+1. Acesse https://my.telegram.org/apps
+2. Faça login
+3. Crie uma nova aplicação
+4. Copie o API_ID e API_HASH
+
+## 📝 Licença
+
+Este projeto é de uso pessoal/educacional.
+
+## 🤝 Contribuições
+
+Este é um projeto pessoal, mas sugestões são bem-vindas!
+
+## 📚 Documentação Adicional
+
+- [Guia de Instalação na VPS](GUIA_INSTALACAO_VPS.md)
+- [Documentação da API](README_API.md)
+- [Comandos para VPS](COMANDOS_VPS.txt)

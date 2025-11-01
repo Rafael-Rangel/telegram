@@ -1,9 +1,29 @@
+# Arquivos de sessão do Telegram
+*.session
+*.session-journal
+
+# Controle de vídeos baixados
+videos_baixados.json
+/tmp/telegram-videos/
+
+# Vídeos baixados
+videos_baixados/
+
+# Arquivos de configuração sensíveis
+.env
+*.env
+config.py
+informacaoapp.text
+
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+env/
+venv/
+ENV/
 build/
 develop-eggs/
 dist/
@@ -20,32 +40,16 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# IDE
+# IDEs
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Audio files (temporários)
-*.wav
-*.mp3
-*.ogg
-
 # Logs
 *.log
-
-# Railway
-.railway/
