@@ -6,7 +6,11 @@ import json
 import asyncio
 from datetime import datetime
 from telethon.sync import TelegramClient, events
-from config import API_ID, API_HASH, SESSION_NAME
+
+# Configurações do Telegram (lê de variáveis de ambiente ou usa padrões)
+API_ID = int(os.getenv("TELEGRAM_API_ID", "29090427"))
+API_HASH = os.getenv("TELEGRAM_API_HASH", "88bf96af8dc0652c6f5026417b7d8f25")
+SESSION_NAME = os.getenv("TELEGRAM_SESSION_NAME", "telegram_session")
 
 # Importar Whisper para transcrição (opcional - só importa se disponível)
 try:

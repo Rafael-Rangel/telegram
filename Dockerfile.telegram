@@ -15,7 +15,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiar código da aplicação
 COPY api.py .
 COPY telegram_client.py .
-COPY config.py .
+# config.py não é necessário - usa variáveis de ambiente do docker-compose
 
 # Criar diretório para vídeos (será montado como volume)
 RUN mkdir -p /tmp/telegram-videos
