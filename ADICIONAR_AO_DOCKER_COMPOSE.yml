@@ -1,0 +1,33 @@
+# ============================================
+# ADICIONE ESTE SERVIÇO AO SEU docker-compose.yml
+# Adicione ANTES da linha "volumes:"
+# ============================================
+
+  telegram-video-downloader:
+    build:
+      context: ./telegram-downloader
+      dockerfile: Dockerfile.telegram
+    container_name: telegram-video-downloader
+    restart: always
+    ports:
+      - "127.0.0.1:8001:8000"
+    environment:
+      - TELEGRAM_API_ID=${TELEGRAM_API_ID}
+      - TELEGRAM_API_HASH=${TELEGRAM_API_HASH}
+      - TELEGRAM_SESSION_NAME=telegram_session
+    volumes:
+      - /tmp/telegram-videos:/tmp/telegram-videos
+      - telegram-session:/app/.telegram_session
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.telegram-downloader.rule=Host(`${TELEGRAM_SUBDOMAIN}.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.telegram-downloader.tls=true"
+      - "traefik.http.routers.telegram-downloader.entrypoints=web,websecure"
+      - "traefik.http.routers.telegram-downloader.tls.certresolver=mytlschallenge"
+      - "traefik.http.services.telegram-downloader.loadbalancer.server.port=8000"
+
+# ============================================
+# E ADICIONE ESTA LINHA NA SEÇÃO volumes:
+# ============================================
+#   telegram-session:
+

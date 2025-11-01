@@ -1,0 +1,182 @@
+# Seu docker-compose.yml COMPLETO após adicionar o telegram-video-downloader
+# Este é um EXEMPLO - use como referência
+
+services:
+
+  traefik:
+    image: "traefik"
+    restart: always
+    command:
+      - "--api=true"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.mytlschallenge.acme.tlschallenge=true"
+      - "--certificatesresolvers.mytlschallenge.acme.email=${SSL_EMAIL}"
+      - "--certificatesresolvers.mytlschallenge.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - traefik_data:/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  n8n:
+    image: n8n-ffmpeg
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "127.0.0.1:5678:5678"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.n8n.rule=Host(`${SUBDOMAIN}.${DOMAIN_NAME}`)
+      - traefik.http.routers.n8n.tls=true
+      - traefik.http.routers.n8n.entrypoints=web,websecure
+      - traefik.http.routers.n8n.tls.certresolver=mytlschallenge
+      - traefik.http.middlewares.n8n.headers.SSLRedirect=true
+      - traefik.http.middlewares.n8n.headers.STSSeconds=315360000
+      - traefik.http.middlewares.n8n.headers.browserXSSFilter=true
+      - traefik.http.middlewares.n8n.headers.contentTypeNosniff=true
+      - traefik.http.middlewares.n8n.headers.forceSTSHeader=true
+      - traefik.http.middlewares.n8n.headers.SSLHost=${DOMAIN_NAME}
+      - traefik.http.middlewares.n8n.headers.STSIncludeSubdomains=true
+      - traefik.http.middlewares.n8n.headers.STSPreload=true
+      - traefik.http.routers.n8n.middlewares=n8n@docker
+    environment:
+      - N8N_HOST=${SUBDOMAIN}.${DOMAIN_NAME}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - NODE_ENV=production
+      - WEBHOOK_URL=https://${SUBDOMAIN}.${DOMAIN_NAME}/
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - /local-files:/files
+
+  kokoro-tts-cpu:
+    image: ghcr.io/remsky/kokoro-fastapi-cpu:v0.2.2
+    container_name: kokoro-tts-cpu
+    restart: always
+    ports:
+      - "8880:8880"
+
+  postiz:
+    image: ghcr.io/gitroomhq/postiz-app:latest
+    container_name: postiz
+    restart: always
+    environment:
+      MAIN_URL: "https://${POSTIZ_SUBDOMAIN}.${DOMAIN_NAME}"
+      FRONTEND_URL: "https://${POSTIZ_SUBDOMAIN}.${DOMAIN_NAME}"
+      NEXT_PUBLIC_BACKEND_URL: "https://${POSTIZ_SUBDOMAIN}.${DOMAIN_NAME}/api"
+      BACKEND_INTERNAL_URL: "http://localhost:3000"
+      JWT_SECRET: ${JWT_SECRET}
+      DATABASE_URL: "postgresql://postiz-user:postiz-password@postiz-postgres:5432/postiz-db-local"
+      REDIS_URL: "redis://postiz-redis:6379"
+      IS_GENERAL: "true"
+      DISABLE_REGISTRATION: "false"
+      STORAGE_PROVIDER: "local"
+      UPLOAD_DIRECTORY: "/uploads"
+      NEXT_PUBLIC_UPLOAD_DIRECTORY: "/uploads"
+      TIKTOK_CLIENT_ID: ${TIKTOK_CLIENT_ID}
+      TIKTOK_CLIENT_SECRET: ${TIKTOK_CLIENT_SECRET}
+      INSTAGRAM_APP_ID: ${INSTAGRAM_APP_ID}
+      INSTAGRAM_APP_SECRET: ${INSTAGRAM_APP_SECRET}
+    volumes:
+      - postiz-config:/config/
+      - postiz-uploads:/uploads/
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.postiz.loadbalancer.server.port=5000
+      - traefik.http.routers.postiz.rule=Host(`${POSTIZ_SUBDOMAIN}.${DOMAIN_NAME}`)
+      - traefik.http.routers.postiz.tls=true
+      - traefik.http.routers.postiz.entrypoints=web,websecure
+      - traefik.http.routers.postiz.tls.certresolver=mytlschallenge
+    expose:
+      - "5000"
+    depends_on:
+      - postiz-postgres
+      - postiz-redis
+
+  postiz-postgres:
+    image: postgres:17-alpine
+    container_name: postiz-postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: postiz-password
+      POSTGRES_USER: postiz-user
+      POSTGRES_DB: postiz-db-local
+    volumes:
+      - postgres-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postiz-user -d postiz-db-local"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  postiz-redis:
+    image: redis:7.2
+    container_name: postiz-redis
+    restart: always
+    volumes:
+      - postiz-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  postiz-legal:
+    image: nginx:alpine
+    container_name: postiz-legal
+    restart: always
+    volumes:
+      - /var/www/postiz-legal:/usr/share/nginx/html:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.legal.rule=Host(`postiz.srv1011759.hstgr.cloud`)"
+      - "traefik.http.routers.legal.entrypoints=web,websecure"
+      - "traefik.http.routers.legal.tls.certresolver=mytlschallenge"
+
+  # ============================================
+  # ADICIONE ESTE SERVIÇO AQUI (ANTES DE volumes:)
+  # ============================================
+  telegram-video-downloader:
+    build:
+      context: ./telegram-downloader
+      dockerfile: Dockerfile.telegram
+    container_name: telegram-video-downloader
+    restart: always
+    ports:
+      - "127.0.0.1:8001:8000"
+    environment:
+      - TELEGRAM_API_ID=${TELEGRAM_API_ID}
+      - TELEGRAM_API_HASH=${TELEGRAM_API_HASH}
+      - TELEGRAM_SESSION_NAME=telegram_session
+    volumes:
+      - /tmp/telegram-videos:/tmp/telegram-videos
+      - telegram-session:/app/.telegram_session
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.telegram-downloader.rule=Host(`${TELEGRAM_SUBDOMAIN}.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.telegram-downloader.tls=true"
+      - "traefik.http.routers.telegram-downloader.entrypoints=web,websecure"
+      - "traefik.http.routers.telegram-downloader.tls.certresolver=mytlschallenge"
+      - "traefik.http.services.telegram-downloader.loadbalancer.server.port=8000"
+
+volumes:
+  traefik_data:
+    external: true
+  n8n_data:
+    external: true
+  postgres-volume:
+  postiz-config:
+  postiz-uploads:
+  postiz-redis-data:
+  telegram-session:  # ADICIONE ESTA LINHA
+

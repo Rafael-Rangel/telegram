@@ -1,0 +1,86 @@
+# ============================================
+# COMANDOS EXATOS PARA SUA VPS
+# Execute na ordem mostrada
+# ============================================
+
+# 1. CRIAR PASTA E CLONAR REPOSITÓRIO
+cd ~
+git clone https://github.com/Rafael-Rangel/telegram.git telegram-downloader
+cd telegram-downloader
+
+# Verificar arquivos
+ls -la
+
+# 2. VOLTAR PARA RAIZ E EDITAR docker-compose.yml
+cd ~
+nano docker-compose.yml
+
+# ADICIONAR ANTES DA LINHA "volumes:":
+# (Copie o conteúdo do arquivo ADICIONAR_AO_DOCKER_COMPOSE.yml)
+
+  telegram-video-downloader:
+    build:
+      context: ./telegram-downloader
+      dockerfile: Dockerfile.telegram
+    container_name: telegram-video-downloader
+    restart: always
+    ports:
+      - "127.0.0.1:8001:8000"
+    environment:
+      - TELEGRAM_API_ID=${TELEGRAM_API_ID}
+      - TELEGRAM_API_HASH=${TELEGRAM_API_HASH}
+      - TELEGRAM_SESSION_NAME=telegram_session
+    volumes:
+      - /tmp/telegram-videos:/tmp/telegram-videos
+      - telegram-session:/app/.telegram_session
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.telegram-downloader.rule=Host(`${TELEGRAM_SUBDOMAIN}.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.telegram-downloader.tls=true"
+      - "traefik.http.routers.telegram-downloader.entrypoints=web,websecure"
+      - "traefik.http.routers.telegram-downloader.tls.certresolver=mytlschallenge"
+      - "traefik.http.services.telegram-downloader.loadbalancer.server.port=8000"
+
+# E NA SEÇÃO volumes:, ADICIONAR:
+  telegram-session:
+
+# 3. ADICIONAR VARIÁVEIS AO .env (se não existir, criar)
+nano .env
+
+# Adicionar estas linhas:
+TELEGRAM_API_ID=29090427
+TELEGRAM_API_HASH=88bf96af8dc0652c6f5026417b7d8f25
+TELEGRAM_SUBDOMAIN=telegram-videos
+
+# 4. BUILD E INICIAR
+docker-compose build telegram-video-downloader
+docker-compose up -d telegram-video-downloader
+
+# 5. VERIFICAR SE ESTÁ RODANDO
+docker ps | grep telegram
+
+# 6. VER LOGS
+docker logs telegram-video-downloader
+
+# 7. AUTENTICAR NO TELEGRAM (PRIMEIRA VEZ - IMPORTANTE!)
+docker exec -it telegram-video-downloader python3 -c "
+import asyncio
+from telethon import TelegramClient
+import os
+async def auth():
+    client = TelegramClient('telegram_session', 29090427, '88bf96af8dc0652c6f5026417b7d8f25')
+    await client.start()
+    print('✅ Autenticado!')
+    await client.disconnect()
+asyncio.run(auth())
+"
+
+# 8. TESTAR API
+curl http://localhost:8001/health
+curl http://localhost:8001/list-groups
+
+# ============================================
+# DOCKER-COMPOSE.YML FINAL DEVE FICAR ASSIM:
+# ============================================
+# (veja o arquivo docker-compose-final.yml)
+
