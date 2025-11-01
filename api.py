@@ -119,7 +119,9 @@ async def get_telegram_client():
     """Obtém ou cria o cliente Telegram"""
     global client
     if client is None or (hasattr(client, 'is_connected') and not client.is_connected()):
-        client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
+        # Usar caminho completo para a sessão (montado como volume)
+        session_path = f"/app/.telegram_session/{SESSION_NAME}"
+        client = TelegramClient(session_path, API_ID, API_HASH)
         await client.start()
     return client
 
